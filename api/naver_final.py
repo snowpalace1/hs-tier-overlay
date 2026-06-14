@@ -23,11 +23,11 @@ class handler(BaseHTTPRequestHandler):
             token_url = "https://nid.naver.com/oauth2.0/token"
             token_params = {
                 "grant_type": "authorization_code",
-                "client_id": client_id,
-                "client_secret": client_secret,
+                "client_id": "kLCeM46CJDEtQ3gqVGfV",
+                "client_secret": "SdTTjdGB3G",
                 "code": code,
                 "state": state,
-                # 앞문(index.html)과 완벽하게 똑같은 주소!
+                # 🔥 핵심: 네이버에 입장권을 받을 때 썼던 주소와 100% 동일한 주소를 내밉니다.
                 "redirect_uri": "https://snowpalace1.github.io/hs-tier-overlay/"
             }
             
