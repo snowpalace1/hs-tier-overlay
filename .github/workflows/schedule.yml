@@ -2,8 +2,8 @@ name: Update Hearthstone Leaderboard
 
 on:
   schedule:
-    - cron: '*/15 * * * *'  # 15분마다 실행하라는 뜻의 마법의 암호입니다.
-  workflow_dispatch:        # 원할 때 버튼을 눌러 수동으로 실행할 수 있게 해줍니다.
+    - cron: '*/20 * * * *'  # 15분마다 실행
+  workflow_dispatch:        # 원할 때 버튼을 눌러 수동으로 실행
 
 jobs:
   update-db:
@@ -21,7 +21,7 @@ jobs:
     - name: 필요한 라이브러리 설치하기
       run: pip install -r requirements.txt
 
-    - name: 파이썬 스크립트 실행하기!
+    - name: 파이썬 스크립트 실행하기
       env:
         SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
