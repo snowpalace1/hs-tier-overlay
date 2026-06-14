@@ -5,7 +5,7 @@ import json
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # SESE 원칙: 상태 코드와 최종 이동/출력할 데이터를 최상단에서 한 번만 초기화합니다.
+        # SESE 원칙: 상태 코드와 최종 응답할 변수를 최상단에서 단 한 번만 초기화합니다.
         status_code = 200
         redirect_target = None
         error_message = None
@@ -27,7 +27,9 @@ class handler(BaseHTTPRequestHandler):
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "code": code,
-                "state": state
+                "state": state,
+                # 🔥 제가 빼먹었던 핵심입니다! 토큰 교환 시에도 똑같은 도착지 주소를 네이버에 알려줘야 합니다. 🔥
+                "redirect_uri": "https://hs-tier-overlay.vercel.app/api/naver"
             }
 
             try:
@@ -44,7 +46,6 @@ class handler(BaseHTTPRequestHandler):
                     if user_json.get("resultcode") == "00":
                         nickname = user_json.get("response", {}).get("nickname", "")
                         if nickname:
-                            # 닉네임을 한글 깨짐 없이 URL에 싣기 위해 인코딩합니다.
                             encoded_nickname = urllib.parse.quote(nickname)
                             status_code = 302
                             redirect_target = f"https://snowpalace1.github.io/hs-tier-overlay/?naver_name={encoded_nickname}"
@@ -63,12 +64,12 @@ class handler(BaseHTTPRequestHandler):
 
         # SESE 원칙: 단일 반환 지점
         if status_code == 302 and redirect_target:
-            # 성공 시 깃허브 웹페이지로 닉네임과 함께 화면을 이동시킵니다.
+            # 성공 시 깃허브 웹페이지로 닉네임과 함께 화면을 튕겨 보냅니다.
             self.send_response(302)
             self.send_header('Location', redirect_target)
             self.end_headers()
         else:
-            # 실패 시 에러 사유를 브라우저에 직접 출력합니다.
+            # 실패 시 확실하게 눈에 띄도록 커다란 HTML 글씨로 에러를 출력합니다.
             self.send_response(status_code)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
