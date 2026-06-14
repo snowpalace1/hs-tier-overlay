@@ -18,21 +18,64 @@
         <button id="bnetLoginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
             2. 배틀넷 로그인
         </button>
+
+        <div id="resultArea" class="mt-6 hidden bg-gray-700 p-4 rounded-lg">
+            <p class="text-lg text-green-400 font-bold mb-1">✅ 배틀넷 인증 완료</p>
+            <p id="battletagDisplay" class="text-blue-300 text-xl font-bold"></p>
+        </div>
         
         <p class="mt-6 text-sm text-gray-500">인증 후 치지직 채팅을 치면 티어가 표시됩니다!</p>
     </div>
 
     <script>
+        // 1. 배틀넷 버튼을 클릭했을 때의 동작
         document.getElementById('bnetLoginBtn').addEventListener('click', function() {
             const clientId = '4a49c5289b9a42aba85056bb55c1154c'; 
             const redirectUri = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
-            
             const stateString = Math.random().toString(36).substring(2, 15);
-
             const bnetAuthUrl = `https://oauth.battle.net/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid&state=${stateString}`;
-            
             window.location.href = bnetAuthUrl;
         });
+
+        // 2. 페이지가 로딩될 때 알아서 코드를 확인하고 Vercel로 보내는 동작
+        window.onload = function() {
+            // 주소창에서 ?code= 값을 찾아냅니다.
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+            
+            if (code) {
+                // 버튼 상태를 '로딩 중'으로 바꿉니다.
+                const bnetBtn = document.getElementById('bnetLoginBtn');
+                bnetBtn.innerText = "배틀넷 연동 중...";
+                bnetBtn.disabled = true;
+                bnetBtn.classList.replace('bg-blue-600', 'bg-gray-600');
+
+                // Vercel 서버에 코드를 보내고 결과를 기다립니다.
+                fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${code}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === "success") {
+                            // 성공하면 버튼을 숨기고 배틀태그를 화면에 띄웁니다!
+                            bnetBtn.style.display = 'none';
+                            const resultArea = document.getElementById('resultArea');
+                            const battletagDisplay = document.getElementById('battletagDisplay');
+                            
+                            resultArea.classList.remove('hidden');
+                            battletagDisplay.innerText = data.battletag;
+                            
+                            // 깔끔하게 주소창의 코드를 지워줍니다.
+                            window.history.replaceState({}, document.title, window.location.pathname);
+                        } else {
+                            alert("인증 실패: " + data.error);
+                            bnetBtn.innerText = "2. 배틀넷 로그인 (재시도)";
+                            bnetBtn.disabled = false;
+                        }
+                    })
+                    .catch(error => {
+                        alert("서버 통신 오류가 발생했습니다.");
+                    });
+            }
+        };
     </script>
 </body>
 </html>
