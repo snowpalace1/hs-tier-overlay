@@ -28,39 +28,33 @@
     </div>
 
     <script>
-        // 1. 네이버 버튼 클릭 이벤트 내부
+        const REDIRECT_URI = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
+        
         document.getElementById('naverLoginBtn').addEventListener('click', function() {
             const naverClientId = 'kLCeM46CJDEtQ3gqVGfV'; 
-            // 도착지 주소를 v2로 변경합니다!
-            const vercelCallback = encodeURIComponent('https://hs-tier-overlay.vercel.app/api/naver_v2'); 
             const stateString = Math.random().toString(36).substring(2, 15);
-            
-            const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${vercelCallback}&state=${stateString}`;
+            localStorage.setItem('login_provider', 'naver');
+            const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${REDIRECT_URI}&state=${stateString}`;
             window.location.href = naverAuthUrl;
         });
 
-        // 2. 배틀넷 버튼 (기존과 동일)
         document.getElementById('bnetLoginBtn').addEventListener('click', function() {
             const bnetClientId = '4a49c5289b9a42aba85056bb55c1154c'; 
-            const REDIRECT_URI = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
             const stateString = Math.random().toString(36).substring(2, 15);
-            
             localStorage.setItem('login_provider', 'bnet');
             const bnetAuthUrl = `https://oauth.battle.net/authorize?client_id=${bnetClientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=openid&state=${stateString}`;
             window.location.href = bnetAuthUrl;
         });
 
-        // 3. 페이지가 로딩될 때 처리
         window.onload = function() {
             const urlParams = new URLSearchParams(window.location.search);
-            const bnetCode = urlParams.get('code');
-            const naverName = urlParams.get('naver_name'); // Vercel이 보내준 네이버 닉네임
+            const code = urlParams.get('code');
+            const state = urlParams.get('state');
             const provider = localStorage.getItem('login_provider');
             
-            // 네이버 인증을 무사히 마치고 Vercel 서버에서 되돌아온 경우
-            if (naverName) {
-                localStorage.setItem('naver_name', naverName);
-                window.history.replaceState({}, document.title, window.location.pathname); // 주소창 정리
+            // 🔥 [가장 핵심] 코드를 읽자마자 브라우저 주소창에서 흔적을 지워버립니다!
+            if (code) {
+                window.history.replaceState({}, document.title, window.location.pathname);
             }
             
             const savedNaver = localStorage.getItem('naver_name');
@@ -80,22 +74,37 @@
                 document.getElementById('battletagDisplay').innerText = savedBnet;
             }
             
-            // 배틀넷 인증 후 깃허브로 코드를 들고 돌아온 경우
-            if (bnetCode && provider === 'bnet') {
-                localStorage.removeItem('login_provider');
-                document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
+            if (code && provider) {
+                localStorage.removeItem('login_provider'); 
                 
-                fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${bnetCode}`)
-                    .then(res => res.json())
-                    .then(data => {
-                        if (data.status === "success") {
-                            localStorage.setItem('bnet_name', data.battletag);
-                            window.location.reload(); 
-                        } else {
-                            alert("배틀넷 인증 실패: " + data.error);
-                            document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 로그인";
-                        }
-                    });
+                if (provider === 'bnet') {
+                    document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
+                    fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${code}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === "success") {
+                                localStorage.setItem('bnet_name', data.battletag);
+                                window.location.reload(); 
+                            } else {
+                                alert("배틀넷 인증 실패: " + data.error);
+                                document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 로그인";
+                            }
+                        });
+                } else if (provider === 'naver') {
+                    document.getElementById('naverLoginBtn').innerText = "네이버 연동 중...";
+                    // 🔥 완전히 새로 만든 naver_final API로 요청을 보냅니다!
+                    fetch(`https://hs-tier-overlay.vercel.app/api/naver_final?code=${code}&state=${state}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === "success") {
+                                localStorage.setItem('naver_name', data.nickname);
+                                window.location.reload();
+                            } else {
+                                alert("네이버 인증 실패: " + data.error);
+                                document.getElementById('naverLoginBtn').innerText = "1. 치지직(네이버) 로그인";
+                            }
+                        });
+                }
             }
         };
     </script>
