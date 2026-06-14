@@ -28,10 +28,11 @@
     </div>
 
     <script>
-        // 1. 네이버 버튼 (깃허브를 거치지 않고 바로 Vercel 서버를 향해 출발합니다)
+        // 1. 네이버 버튼 클릭 이벤트 내부
         document.getElementById('naverLoginBtn').addEventListener('click', function() {
             const naverClientId = 'kLCeM46CJDEtQ3gqVGfV'; 
-            const vercelCallback = encodeURIComponent('https://hs-tier-overlay.vercel.app/api/naver');
+            // 도착지 주소를 v2로 변경합니다!
+            const vercelCallback = encodeURIComponent('https://hs-tier-overlay.vercel.app/api/naver_v2'); 
             const stateString = Math.random().toString(36).substring(2, 15);
             
             const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${vercelCallback}&state=${stateString}`;
