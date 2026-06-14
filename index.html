@@ -15,11 +15,27 @@
             1. 치지직(네이버) 로그인
         </button>
         
-        <button class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
+        <button id="bnetLoginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
             2. 배틀넷 로그인
         </button>
         
         <p class="mt-6 text-sm text-gray-500">인증 후 치지직 채팅을 치면 티어가 표시됩니다!</p>
     </div>
+
+    <script>
+        // 배틀넷 버튼을 클릭했을 때 작동하는 엔진
+        document.getElementById('bnetLoginBtn').addEventListener('click', function() {
+            const clientId = '4a49c5289b9a42aba85056bb55c1154c'; 
+            
+            // 로그인 후 다시 돌아올 우리 웹페이지 주소
+            const redirectUri = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
+            
+            // 블리자드 공식 인증 페이지로 향하는 전용 길 안내 링크
+            const bnetAuthUrl = `https://oauth.battle.net/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid`;
+            
+            // 사용자의 화면을 위의 링크로 이동
+            window.location.href = bnetAuthUrl;
+        });
+    </script>
 </body>
 </html>
