@@ -1,11 +1,10 @@
 from http.server import BaseHTTPRequestHandler
 import urllib.parse
 import requests
-import json
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # SESE 원칙: 상태 코드와 최종 응답할 변수를 최상단에서 단 한 번만 초기화합니다.
+        # SESE 원칙 적용: 상태 코드와 이동할 주소 변수를 최상단에서 단 한 번만 초기화합니다.
         status_code = 200
         redirect_target = None
         error_message = None
@@ -28,7 +27,7 @@ class handler(BaseHTTPRequestHandler):
                 "client_secret": client_secret,
                 "code": code,
                 "state": state,
-                # 🔥 제가 빼먹었던 핵심입니다! 토큰 교환 시에도 똑같은 도착지 주소를 네이버에 알려줘야 합니다. 🔥
+                # 🔥 핵심 수정 사항! 네이버 설정 및 index.html과 완벽하게 동일한 주소를 씁니다. 🔥
                 "redirect_uri": "https://hs-tier-overlay.vercel.app/api/naver"
             }
 
@@ -38,6 +37,7 @@ class handler(BaseHTTPRequestHandler):
 
                 if "access_token" in token_json:
                     access_token = token_json["access_token"]
+                    
                     user_info_url = "https://openapi.naver.com/v1/nid/me"
                     headers = {"Authorization": f"Bearer {access_token}"}
                     user_res = requests.get(user_info_url, headers=headers)
@@ -46,6 +46,7 @@ class handler(BaseHTTPRequestHandler):
                     if user_json.get("resultcode") == "00":
                         nickname = user_json.get("response", {}).get("nickname", "")
                         if nickname:
+                            # 성공 시: 닉네임을 URL에 담아 깃허브 프론트엔드로 튕겨 보냅니다.
                             encoded_nickname = urllib.parse.quote(nickname)
                             status_code = 302
                             redirect_target = f"https://snowpalace1.github.io/hs-tier-overlay/?naver_name={encoded_nickname}"
@@ -62,14 +63,14 @@ class handler(BaseHTTPRequestHandler):
                 status_code = 500
                 error_message = f"서버 백엔드 통신 오류: {str(e)}"
 
-        # SESE 원칙: 단일 반환 지점
+        # SESE 원칙 적용: 함수의 맨 마지막에서 단 한 번만 응답을 보냅니다.
         if status_code == 302 and redirect_target:
-            # 성공 시 깃허브 웹페이지로 닉네임과 함께 화면을 튕겨 보냅니다.
+            # 깃허브 웹페이지로 유저 화면을 이동시킵니다.
             self.send_response(302)
             self.send_header('Location', redirect_target)
             self.end_headers()
         else:
-            # 실패 시 확실하게 눈에 띄도록 커다란 HTML 글씨로 에러를 출력합니다.
+            # 실패 시 까만 텍스트가 아닌 커다란 HTML 글씨로 에러를 보여줍니다.
             self.send_response(status_code)
             self.send_header('Content-type', 'text/html; charset=utf-8')
             self.end_headers()
