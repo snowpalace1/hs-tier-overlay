@@ -85,8 +85,10 @@
                 document.getElementById('battletagDisplay').innerText = savedBnet;
             }
             
-            // 주소창에 코드가 달려있고, 어디서 왔는지 기억하고 있다면 통신 시작!
+            // 통신 시작 로직
             if (code && provider) {
+                localStorage.removeItem('login_provider'); // 확인 즉시 임시 기억 삭제
+                
                 if (provider === 'bnet') {
                     document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
                     fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${code}`)
@@ -94,20 +96,19 @@
                         .then(data => {
                             if (data.status === "success") {
                                 localStorage.setItem('bnet_name', data.battletag);
-                                window.location.href = decodeURIComponent(REDIRECT_URI); // 깔끔하게 새로고침
+                                window.location.reload(); // 새로고침
                             } else {
                                 alert("배틀넷 인증 실패: " + data.error);
                             }
                         });
                 } else if (provider === 'naver') {
                     document.getElementById('naverLoginBtn').innerText = "네이버 연동 중...";
-                    // 네이버 전용 API로 코드를 보냅니다. (이 API는 다음 단계에서 만듭니다!)
                     fetch(`https://hs-tier-overlay.vercel.app/api/naver?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === "success") {
                                 localStorage.setItem('naver_name', data.nickname);
-                                window.location.href = decodeURIComponent(REDIRECT_URI);
+                                window.location.reload(); // 새로고침
                             } else {
                                 alert("네이버 인증 실패: " + data.error);
                             }
