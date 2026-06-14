@@ -60,6 +60,12 @@
             const code = urlParams.get('code');
             const state = urlParams.get('state');
             const provider = localStorage.getItem('login_provider');
+
+            // [핵심 해결책] 코드를 읽어오자마자 즉시 주소창을 깨끗하게 지워버립니다. 
+            // 이렇게 하면 브라우저가 몰래 중복 실행하거나 새로고침해도 에러가 나지 않습니다.
+            if (code) {
+                window.history.replaceState({}, document.title, window.location.pathname);
+            }
             
             // 이미 로그인한 기록이 있으면 화면에 띄워줍니다.
             const savedNaver = localStorage.getItem('naver_name');
