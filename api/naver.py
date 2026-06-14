@@ -6,11 +6,10 @@ from urllib.parse import parse_qs, urlparse
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # SESE 원칙 적용: 응답 변수들을 최상단에서 한 번만 초기화합니다.
+        # SESE 원칙 적용: 응답 변수 초기화
         status_code = 200
         response_data = {}
         
-        # 1. 쿼리 스트링에서 네이버 code와 state 가져오기
         query_components = parse_qs(urlparse(self.path).query)
         code = query_components.get("code", [None])[0]
         state = query_components.get("state", [None])[0]
@@ -19,33 +18,38 @@ class handler(BaseHTTPRequestHandler):
             status_code = 400
             response_data = {"error": "코드 또는 state가 전달되지 않았습니다."}
         else:
-            # 2. 네이버에 입장권 던지고 Access Token 받아오기
             token_url = "https://nid.naver.com/oauth2.0/token"
-            client_id = os.environ.get("NAVER_CLIENT_ID")
-            client_secret = os.environ.get("NAVER_CLIENT_SECRET")
+            # 오류 방지 1: Vercel 환경 변수에서 키를 가져올 때 앞뒤의 보이지 않는 공백 제거
+            client_id = os.environ.get("NAVER_CLIENT_ID", "").strip()
+            client_secret = os.environ.get("NAVER_CLIENT_SECRET", "").strip()
             
             token_params = {
                 "grant_type": "authorization_code",
                 "client_id": client_id,
                 "client_secret": client_secret,
                 "code": code,
-                "state": state
+                "state": state,
+                # 오류 방지 2: 토큰 교환 시에도 웹페이지 주소를 명시적으로 다시 한번 전달
+                "redirect_uri": "https://snowpalace1.github.io/hs-tier-overlay/"
             }
             
             try:
-                token_res = requests.get(token_url, params=token_params)
+                # 오류 방지 3: 보안 차단을 피하기 위해 일반 브라우저 통신처럼 User-Agent 헤더 추가
+                req_headers = {"User-Agent": "Mozilla/5.0"}
+                token_res = requests.get(token_url, params=token_params, headers=req_headers)
                 token_json = token_res.json()
                 
                 if "access_token" in token_json:
                     access_token = token_json["access_token"]
                     
-                    # 3. 진짜 출입증으로 유저의 '치지직(네이버) 닉네임' 조회하기
                     user_info_url = "https://openapi.naver.com/v1/nid/me"
-                    headers = {"Authorization": f"Bearer {access_token}"}
+                    headers = {
+                        "Authorization": f"Bearer {access_token}",
+                        "User-Agent": "Mozilla/5.0"
+                    }
                     user_res = requests.get(user_info_url, headers=headers)
                     user_json = user_res.json()
                     
-                    # 네이버 API는 성공 시 resultcode "00"을 반환합니다.
                     if user_json.get("resultcode") == "00":
                         nickname = user_json.get("response", {}).get("nickname")
                         if nickname:
@@ -66,7 +70,7 @@ class handler(BaseHTTPRequestHandler):
                 status_code = 500
                 response_data = {"error": f"서버 통신 오류: {str(e)}"}
 
-        # SESE 원칙 적용: 함수의 맨 마지막에서 단 한 번만 응답을 전송합니다.
+        # SESE 원칙 적용: 단일 반환 지점
         self.send_response(status_code)
         self.send_header('Content-type', 'application/json; charset=utf-8')
         self.send_header('Access-Control-Allow-Origin', '*') 
