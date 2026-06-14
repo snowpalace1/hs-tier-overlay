@@ -18,7 +18,7 @@ class handler(BaseHTTPRequestHandler):
         else:
             # 완전 하드코딩! Vercel 환경변수를 무시하고 직접 박아넣습니다.
             client_id = "kLCeM46CJDEtQ3gqVGfV"
-            client_secret = "SdTTjdGB3G"
+            client_secret = "WbjPEBPJmw"
             
             token_url = "https://nid.naver.com/oauth2.0/token"
             token_params = {
