@@ -2,7 +2,7 @@ name: Update Hearthstone Leaderboard
 
 on:
   schedule:
-    - cron: '*/20 * * * *'  # 15분마다 실행
+    - cron: '*/30 * * * *'  # 30분마다 실행
   workflow_dispatch:        # 원할 때 버튼을 눌러 수동으로 실행
 
 jobs:
