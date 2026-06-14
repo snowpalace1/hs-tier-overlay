@@ -27,10 +27,8 @@
             const clientId = '4a49c5289b9a42aba85056bb55c1154c'; 
             const redirectUri = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
             
-            // 보안을 위한 무작위 state 문자열 생성 (추가된 부분)
             const stateString = Math.random().toString(36).substring(2, 15);
-            
-            // 주소 맨 끝에 &state=${stateString} 추가
+
             const bnetAuthUrl = `https://oauth.battle.net/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=code&scope=openid&state=${stateString}`;
             
             window.location.href = bnetAuthUrl;
