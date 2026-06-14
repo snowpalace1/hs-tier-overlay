@@ -82,6 +82,7 @@
                     fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${code}`)
                         .then(res => res.json())
                         .then(data => {
+                            window.history.replaceState(null, '', window.location.pathname);
                             if (data.status === "success") {
                                 localStorage.setItem('bnet_name', data.battletag);
                                 window.location.reload(); 
