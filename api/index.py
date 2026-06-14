@@ -1,18 +1,29 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import os
+import requests
+from urllib.parse import parse_qs, urlparse
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        # 통신 성공(200) 상태 코드와 함께 JSON 형식으로 응답할 것임을 명시합니다.
-        self.send_response(200)
-        self.send_header('Content-type', 'application/json; charset=utf-8')
-        self.end_headers()
-        
-        # 클라이언트에게 보낼 확인용 메시지입니다.
-        response_data = {
-            "status": "success",
-            "message": "백엔드 API 서버가 성공적으로 구축되었습니다!"
+        # 1. 쿼리 스트링(주소창)에서 code 가져오기
+        query_components = parse_qs(urlparse(self.path).query)
+        code = query_components.get("code", [None])[0]
+
+        if not code:
+            self.send_response(400)
+            self.end_headers()
+            self.wfile.write(b"No code provided")
+            return
+
+        # 2. 블리자드에 입장권(code) 던지고 닉네임(배틀태그) 받기
+        token_url = "https://oauth.battle.net/token"
+        data = {
+            "grant_type": "authorization_code",
+            "code": code,
+            "redirect_uri": "https://snowpalace1.github.io/hs-tier-overlay/",
+            "client_id": os.environ.get("BNET_CLIENT_ID"),
+            "client_id": os.environ.get("BNET_CLIENT_SECRET") # <- 요건 잠시 후 설정!
         }
         
-        # 한글 깨짐을 방지하며 데이터를 전송하고 함수를 종료합니다.
-        self.wfile.write(json.dumps(response_data, ensure_ascii=False).encode('utf-8'))
+        # ... (이하 인증 로직은 다음 단계에서 상세히 완성하겠습니다)
