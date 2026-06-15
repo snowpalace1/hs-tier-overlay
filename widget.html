@@ -17,69 +17,99 @@
 <body class="h-screen w-full flex flex-col justify-end p-4">
     <div id="chat-container" class="flex flex-col space-y-1.5 w-full max-h-full"></div>
     <script>
-        const WS_URL = "wss://hs-chzzk-tier-api.duckdns.org/ws/overlay";
         const chatContainer = document.getElementById('chat-container');
+        const urlParams = new URLSearchParams(window.location.search);
+        const channelId = urlParams.get('channelId') || "327688e7f4894b6daa97a29ab3e85495"; 
+        
+        const rankCache = {};
+        const inFlightRequests = {};
 
-        function connect() {
-            const ws = new WebSocket(WS_URL);
-            ws.onopen = () => console.log("✅ OBS 위젯 서버 연결 성공");
-            ws.onmessage = (event) => appendMessage(JSON.parse(event.data));
-            ws.onclose = () => setTimeout(connect, 3000);
+        async function getRankData(userIdHash) {
+            if (rankCache[userIdHash] !== undefined) return rankCache[userIdHash];
+            if (inFlightRequests[userIdHash]) return await inFlightRequests[userIdHash];
+
+            inFlightRequests[userIdHash] = fetch(`https://hs-chzzk-tier-api.duckdns.org/api/rank/${userIdHash}`)
+                .then(res => res.json())
+                .then(json => {
+                    const data = json.status === "success" ? json : null;
+                    rankCache[userIdHash] = data;
+                    delete inFlightRequests[userIdHash];
+                    return data;
+                })
+                .catch(() => { delete inFlightRequests[userIdHash]; return null; });
+            return await inFlightRequests[userIdHash];
         }
 
-        function appendMessage(data) {
+        async function connectChzzk() {
+            try {
+                const authRes = await fetch(`https://hs-chzzk-tier-api.duckdns.org/api/chat-auth/${channelId}`);
+                const authData = await authRes.json();
+                if (authData.status !== "success") {
+                    setTimeout(connectChzzk, 5000);
+                    return;
+                }
+
+                const ws = new WebSocket("wss://kr-ss1.chat.naver.com/chat");
+                
+                ws.onopen = () => {
+                    ws.send(JSON.stringify({
+                        ver: "2", cmd: 100, svcid: "game", cid: authData.chatChannelId,
+                        bdy: { uid: null, devType: 2001, accTkn: authData.accessToken, auth: "READ" }, tid: 1
+                    }));
+                };
+
+                ws.onmessage = async (event) => {
+                    const data = JSON.parse(event.data);
+                    if (data.cmd === 0) {
+                        ws.send(JSON.stringify({ ver: "2", cmd: 10000 }));
+                    } else if (data.cmd === 93101) {
+                        for (const chat of data.bdy) {
+                            const profile = chat.profile ? JSON.parse(chat.profile) : {};
+                            const userIdHash = profile.userIdHash;
+                            const msgText = chat.msg || "";
+                            const nickname = profile.nickname || "알 수 없음";
+
+                            if (userIdHash && msgText) {
+                                const rankData = await getRankData(userIdHash);
+                                renderMessage(nickname, msgText, rankData);
+                            }
+                        }
+                    }
+                };
+
+                ws.onclose = () => setTimeout(connectChzzk, 3000);
+            } catch (error) {
+                setTimeout(connectChzzk, 5000);
+            }
+        }
+
+        function renderMessage(nickname, msg, rankData) {
             const row = document.createElement('div');
             row.className = 'chat-row break-words text-white text-[15px] leading-relaxed';
 
             let badgeHtml = '';
-            
-            if (data.rank_data) {
-                let rankNum = data.rank_data.rank;
+            if (rankData) {
+                let rankNum = rankData.rank;
                 if (rankNum === 0) {
-                    // 연동 O, 비전설 (기존 회색 유지)
                     badgeHtml = `<span class="badge inline-block px-1.5 py-0.5 font-bold text-white text-[13px] align-middle mr-1" style="background-color: #6b7280;">비전설</span>`;
                 } else {
-                    // 연동 O, 전설 등수 세분화 매핑
-                    let bgColor = '#78350f'; // 기본값: 5000등 바깥 (갈색/동색)
-                    let fontColor = '#ffffff';
-                    let shinyClass = '';
-
-                    if (rankNum <= 10) {
-                        bgColor = '#38bdf8'; // 10등 이내: 하늘색 
-                        fontColor = '#000000';
-                        shinyClass = 'shiny'; // 반짝이 유지
-                    } else if (rankNum <= 100) {
-                        bgColor = '#ef4444'; // 100등 이내: 빨간색
-                        fontColor = '#000000';
-                        shinyClass = 'shiny'; // 반짝이 유지
-                    } else if (rankNum <= 500) {
-                        bgColor = '#a855f7'; // 500등 이내: 보라색
-                    } else if (rankNum <= 1000) {
-                        bgColor = '#3b82f6'; // 1000등 이내: 파란색
-                    } else if (rankNum <= 2000) {
-                        bgColor = '#22c55e'; // 2000등 이내: 초록색
-                        fontColor = '#000000';
-                    } else if (rankNum <= 3000) {
-                        bgColor = '#eab308'; // 3000등 이내: 노란색
-                        fontColor = '#000000';
-                    } else if (rankNum <= 5000) {
-                        bgColor = '#cbd5e1'; // 5000등 이내: 은색
-                        fontColor = '#000000';
-                    }
-
-                    badgeHtml = `<span class="badge ${shinyClass} inline-block px-1.5 py-0.5 font-bold text-[13px] align-middle mr-1" style="background-color: ${bgColor}; color: ${fontColor};">${data.rank_data.region} ${rankNum}</span>`;
+                    let bgColor = '#78350f', fontColor = '#ffffff', shinyClass = '';
+                    if (rankNum <= 10) { bgColor = '#38bdf8'; fontColor = '#000000'; shinyClass = 'shiny'; }
+                    else if (rankNum <= 100) { bgColor = '#ef4444'; fontColor = '#000000'; shinyClass = 'shiny'; }
+                    else if (rankNum <= 500) { bgColor = '#a855f7'; }
+                    else if (rankNum <= 1000) { bgColor = '#3b82f6'; }
+                    else if (rankNum <= 2000) { bgColor = '#22c55e'; fontColor = '#000000'; }
+                    else if (rankNum <= 3000) { bgColor = '#eab308'; fontColor = '#000000'; }
+                    else if (rankNum <= 5000) { bgColor = '#cbd5e1'; fontColor = '#000000'; }
+                    badgeHtml = `<span class="badge ${shinyClass} inline-block px-1.5 py-0.5 font-bold text-[13px] align-middle mr-1" style="background-color: ${bgColor}; color: ${fontColor};">${rankData.region} ${rankNum}</span>`;
                 }
-            } 
-
-            row.innerHTML = `
-                ${badgeHtml}
-                <span class="font-bold text-gray-200 mr-1 align-middle">${data.nickname}</span>
-                <span class="align-middle">${data.msg}</span>
-            `;
+            }
+            row.innerHTML = `${badgeHtml}<span class="font-bold text-gray-200 mr-1 align-middle">${nickname}</span><span class="align-middle">${msg}</span>`;
             chatContainer.appendChild(row);
-            row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+            row.scrollIntoView({ behavior: 'auto', block: 'end' });
         }
-        connect();
+        
+        connectChzzk();
     </script>
 </body>
 </html>
