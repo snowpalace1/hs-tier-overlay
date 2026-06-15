@@ -6,8 +6,13 @@
     <title>하스스톤 티어 인증</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center h-screen">
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center max-w-md w-full">
+<body class="bg-gray-900 text-white flex items-center justify-center h-screen relative">
+    
+    <div class="absolute top-0 w-full bg-red-600 text-white text-center py-3 text-sm font-bold shadow-lg">
+        ⚠️ 카카오톡, 치지직 등 '앱 내장 브라우저'에서는 오류가 발생합니다.<br>반드시 우측 하단 탭을 눌러 <span class="text-yellow-300">크롬(Chrome)</span>이나 <span class="text-yellow-300">사파리(Safari)</span>로 열어주세요!
+    </div>
+
+    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center max-w-md w-full mt-12">
         <h1 class="text-3xl font-bold mb-4 text-blue-400">하스스톤 티어 인증</h1>
         <p class="text-gray-400 mb-8">치지직 방송 오버레이 연동을 위해<br>두 계정을 순서대로 로그인해 주세요.</p>
         
@@ -55,9 +60,7 @@
             const state = urlParams.get('state');
             const provider = localStorage.getItem('login_provider');
             
-            if (code) {
-                window.history.replaceState(null, '', window.location.pathname);
-            }
+            if (code) window.history.replaceState(null, '', window.location.pathname);
             
             const savedChzzk = localStorage.getItem('chzzk_name');
             const savedBnet = localStorage.getItem('bnet_name');
@@ -67,12 +70,8 @@
                 document.getElementById('resultArea').classList.remove('hidden');
                 document.getElementById('chzzkResult').classList.remove('hidden');
                 document.getElementById('chzzkDisplay').innerText = savedChzzk;
-                
-                if (!savedBnet) {
-                    document.getElementById('bnetLoginBtn').style.display = 'block';
-                }
+                if (!savedBnet) document.getElementById('bnetLoginBtn').style.display = 'block';
             }
-            
             if (savedBnet) {
                 document.getElementById('bnetLoginBtn').style.display = 'none';
                 document.getElementById('bnetResultArea').classList.remove('hidden');
@@ -82,10 +81,8 @@
             
             if (code && provider) {
                 localStorage.removeItem('login_provider'); 
-                
                 if (provider === 'bnet') {
                     document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
-                    // 💡 [수정 완료] 저장해 두었던 치지직 고유 식별자(chzzk_id)를 주소 뒤에 덧붙여 전송합니다.
                     const chzzkId = localStorage.getItem('chzzk_id') || '';
                     fetch(`https://hs-chzzk-tier-api.duckdns.org/api/bnet?code=${code}&state=${state}&chzzkId=${chzzkId}`)
                         .then(res => res.json())
