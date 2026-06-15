@@ -93,8 +93,7 @@
                         });
                 } else if (provider === 'naver') {
                     document.getElementById('naverLoginBtn').innerText = "네이버 연동 중...";
-                    // 🔥 완전히 새로 만든 naver_final API로 요청을 보냅니다!
-                    fetch(`https://hs-tier-overlay.vercel.app/api/naver_final?code=${code}&state=${state}`)
+                    fetch(`http://131.186.2.217:8000/api/naver?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === "success") {
