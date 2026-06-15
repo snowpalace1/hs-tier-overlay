@@ -3,55 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>하스스톤 티어 인증</title>
+    <title>하스스톤 채팅 위젯 대시보드</title>
     <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-900 text-white flex items-center justify-center h-screen relative">
+<body class="bg-gray-900 text-white flex flex-col items-center py-12 relative min-h-screen">
     
     <div class="absolute top-0 w-full bg-red-600 text-white text-center py-3 text-sm font-bold shadow-lg">
-        ⚠️ 카카오톡, 치지직 등 '앱 내장 브라우저'에서는 오류가 발생합니다.<br>반드시 우측 하단 탭을 눌러 <span class="text-yellow-300">크롬(Chrome)</span>이나 <span class="text-yellow-300">사파리(Safari)</span>로 열어주세요!
+        ⚠️ 치지직 등 '앱 내장 브라우저'에서는 오류가 발생합니다. 반드시 우측 하단 메뉴를 눌러 크롬/사파리로 열어주세요!
     </div>
 
-    <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center max-w-md w-full mt-12">
-        <h1 class="text-3xl font-bold mb-4 text-blue-400">하스스톤 티어 인증</h1>
-        <p class="text-gray-400 mb-8">치지직 방송 오버레이 연동을 위해<br>두 계정을 순서대로 로그인해 주세요.</p>
+    <h1 class="text-3xl font-bold mb-2 text-blue-400 mt-10">하스스톤 채팅 위젯</h1>
+    <p class="text-gray-400 mb-10 text-center">스트리머용 오버레이 생성 및 시청자용 연동 시스템</p>
+
+    <div class="flex flex-col md:flex-row gap-6 w-full max-w-4xl px-4">
         
-        <button id="chzzkLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded mb-4 transition duration-300">
-            1. 치지직 연동하기
-        </button>
-        
-        <div id="resultArea" class="mt-4 mb-4 hidden bg-gray-700 p-4 rounded-lg">
-            <p id="chzzkResult" class="text-lg text-green-400 font-bold hidden">✅ 치지직: <span id="chzzkDisplay" class="text-white"></span></p>
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex-1">
+            <h2 class="text-2xl font-bold mb-4 text-yellow-400">📺 스트리머이신가요?</h2>
+            <p class="text-sm text-gray-400 mb-6">내 방송 채팅에 시청자들의 하스스톤 랭크 뱃지를 표시합니다.</p>
+            
+            <label class="block text-sm font-medium mb-2">치지직 채널 ID (주소창 마지막 32자리)</label>
+            <input type="text" id="streamerIdInput" placeholder="예: 327688e7f4894b6daa97a29ab3e85495" class="w-full p-3 rounded bg-gray-700 text-white border border-gray-600 focus:border-blue-500 outline-none mb-4">
+            
+            <button onclick="generateWidgetUrl()" class="w-full bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-3 px-4 rounded transition duration-300 mb-4">
+                오버레이 URL 생성하기
+            </button>
+
+            <div id="urlResultArea" class="hidden">
+                <p class="text-sm text-gray-300 mb-2">OBS 브라우저 소스에 아래 주소를 복사하여 붙여넣으세요.</p>
+                <input type="text" id="widgetUrlOutput" readonly class="w-full p-2 rounded bg-gray-900 text-green-400 border border-gray-700 mb-2 text-sm">
+            </div>
         </div>
 
-        <button id="bnetLoginBtn" style="display: none;" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
-            2. 배틀넷 연동하기
-        </button>
+        <div class="bg-gray-800 p-8 rounded-lg shadow-lg flex-1 text-center">
+            <h2 class="text-2xl font-bold mb-4 text-blue-400">🎮 시청자이신가요?</h2>
+            <p class="text-sm text-gray-400 mb-8">두 계정을 순서대로 로그인하여 전설 뱃지를 연동하세요.</p>
+            
+            <button id="chzzkLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded mb-4 transition duration-300">
+                1. 치지직 연동하기
+            </button>
+            <div id="resultArea" class="mb-4 hidden bg-gray-700 p-4 rounded-lg">
+                <p id="chzzkResult" class="text-sm text-green-400 font-bold hidden">✅ 치지직: <span id="chzzkDisplay" class="text-white"></span></p>
+            </div>
 
-        <div id="bnetResultArea" class="mt-4 hidden bg-gray-700 p-4 rounded-lg">
-            <p id="bnetResult" class="text-lg text-blue-400 font-bold hidden">✅ 배틀넷: <span id="battletagDisplay" class="text-white"></span></p>
+            <button id="bnetLoginBtn" style="display: none;" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
+                2. 배틀넷 연동하기
+            </button>
+            <div id="bnetResultArea" class="hidden bg-gray-700 p-4 rounded-lg">
+                <p id="bnetResult" class="text-sm text-blue-400 font-bold hidden">✅ 배틀넷: <span id="battletagDisplay" class="text-white"></span></p>
+            </div>
         </div>
-        
-        <p class="mt-6 text-sm text-gray-500">인증 후 치지직 채팅을 치면 티어가 표시됩니다!</p>
+
     </div>
 
     <script>
         const REDIRECT_URI = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
+
+        function generateWidgetUrl() {
+            const channelId = document.getElementById('streamerIdInput').value.trim();
+            if (!channelId) { alert("채널 ID를 입력해주세요."); return; }
+            const widgetUrl = `https://snowpalace1.github.io/hs-tier-overlay/widget.html?channelId=${channelId}`;
+            document.getElementById('widgetUrlOutput').value = widgetUrl;
+            document.getElementById('urlResultArea').classList.remove('hidden');
+        }
         
         document.getElementById('chzzkLoginBtn').addEventListener('click', function() {
-            const chzzkClientId = '37cbbed2-f852-4d79-978f-03234545ee2a'; 
-            const stateString = Math.random().toString(36).substring(2, 15);
             localStorage.setItem('login_provider', 'chzzk');
-            const chzzkAuthUrl = `https://chzzk.naver.com/account-interlock?response_type=code&clientId=${chzzkClientId}&redirectUri=${REDIRECT_URI}&state=${stateString}`;
-            window.location.href = chzzkAuthUrl;
+            window.location.href = `https://chzzk.naver.com/account-interlock?response_type=code&clientId=37cbbed2-f852-4d79-978f-03234545ee2a&redirectUri=${REDIRECT_URI}&state=${Math.random().toString(36).substring(2)}`;
         });
 
         document.getElementById('bnetLoginBtn').addEventListener('click', function() {
-            const bnetClientId = '4a49c5289b9a42aba85056bb55c1154c'; 
-            const stateString = Math.random().toString(36).substring(2, 15);
             localStorage.setItem('login_provider', 'bnet');
-            const bnetAuthUrl = `https://oauth.battle.net/authorize?client_id=${bnetClientId}&redirect_uri=${REDIRECT_URI}&response_type=code&scope=openid&state=${stateString}`;
-            window.location.href = bnetAuthUrl;
+            window.location.href = `https://oauth.battle.net/authorize?client_id=4a49c5289b9a42aba85056bb55c1154c&redirect_uri=${REDIRECT_URI}&response_type=code&scope=openid&state=${Math.random().toString(36).substring(2)}`;
         });
 
         window.onload = function() {
@@ -82,7 +104,7 @@
             if (code && provider) {
                 localStorage.removeItem('login_provider'); 
                 if (provider === 'bnet') {
-                    document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
+                    document.getElementById('bnetLoginBtn').innerText = "연동 중...";
                     const chzzkId = localStorage.getItem('chzzk_id') || '';
                     fetch(`https://hs-chzzk-tier-api.duckdns.org/api/bnet?code=${code}&state=${state}&chzzkId=${chzzkId}`)
                         .then(res => res.json())
@@ -91,12 +113,12 @@
                                 localStorage.setItem('bnet_name', data.battletag);
                                 window.location.reload(); 
                             } else {
-                                alert("배틀넷 인증 실패: " + data.message);
+                                alert("배틀넷 인증 실패");
                                 document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 연동하기";
                             }
                         });
                 } else if (provider === 'chzzk') {
-                    document.getElementById('chzzkLoginBtn').innerText = "치지직 연동 중...";
+                    document.getElementById('chzzkLoginBtn').innerText = "연동 중...";
                     fetch(`https://hs-chzzk-tier-api.duckdns.org/api/chzzk?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
@@ -105,7 +127,7 @@
                                 localStorage.setItem('chzzk_id', data.userIdHash); 
                                 window.location.reload();
                             } else {
-                                alert("치지직 인증 실패: " + data.message);
+                                alert("치지직 인증 실패");
                                 document.getElementById('chzzkLoginBtn').innerText = "1. 치지직 연동하기";
                             }
                         });
