@@ -113,10 +113,10 @@
             row.scrollIntoView({ behavior: 'smooth', block: 'end' });
 
             // 지정된 시간(15초)이 지나면 서서히 사라지는(Fadeout) 로직 이식
-            setTimeout(() => {
-                row.classList.add('fading');
-                setTimeout(() => row.remove(), 500); // 투명해진 후 DOM에서 완전히 삭제
-            }, FADEOUT_SEC * 1000);
+            //setTimeout(() => {
+                //row.classList.add('fading');
+                //setTimeout(() => row.remove(), 500); // 투명해진 후 DOM에서 완전히 삭제
+            //}, FADEOUT_SEC * 1000);
         }
 
         // 웹소켓 연결 시작
