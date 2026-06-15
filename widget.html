@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>하스스톤 채팅 위젯</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* 오픈소스에서 사용한 Pretendard 폰트 적용 */
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css');
+        
+        body {
+            font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: transparent; /* OBS 투명 배경용 */
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* [핵심] 오픈소스의 반짝이는(Shiny) 애니메이션 완벽 이식 */
+        @keyframes glint {
+            0% { left: -60%; }
+            55%, 100% { left: 130%; }
+        }
+
+        .badge {
+            position: relative;
+            clip-path: inset(0 round 0.25rem);
+            text-shadow: 0 0 1px rgba(255,255,255,0.5);
+        }
+
+        .shiny::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -60%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.85), transparent);
+            transform: skewX(-20deg);
+            animation: glint 2.6s ease-in-out infinite;
+        }
+
+        /* 오픈소스의 부드러운 페이드아웃 및 가독성 텍스트 그림자 효과 이식 */
+        .chat-row {
+            transition: opacity 0.5s ease-in-out;
+            opacity: 1;
+            filter: drop-shadow(0 1px 1px rgba(0,0,0,0.8));
+        }
+        
+        .chat-row.fading {
+            opacity: 0;
+        }
+    </style>
+</head>
+<body class="h-screen w-full flex flex-col justify-end p-4">
+    
+    <div id="chat-container" class="flex flex-col space-y-1.5 w-full max-h-full">
+        </div>
+
+    <script>
+        // 앞서 오라클 서버에 구축한 웹소켓 주소
+        const WS_URL = "wss://hs-chzzk-tier-api.duckdns.org/ws/overlay";
+        const chatContainer = document.getElementById('chat-container');
+        
+        // 비활성 채팅 페이드아웃 설정 (15초 뒤 서서히 사라짐)
+        const FADEOUT_SEC = 15; 
+
+        function connect() {
+            const ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => console.log("✅ OBS 위젯 서버 연결 성공");
+
+            ws.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                // 백엔드 데이터: { nickname: "좌파", msg: "테스트", rank: 75, region: "AP" }
+                appendMessage(data);
+            };
+
+            ws.onclose = () => {
+                console.log("❌ 연결 끊김. 3초 후 자동 재연결 시도...");
+                setTimeout(connect, 3000);
+            };
+        }
+
+        function appendMessage(data) {
+            const row = document.createElement('div');
+            row.className = 'chat-row break-words text-white text-[15px] leading-relaxed';
+
+            // 등수에 따른 뱃지 색상 및 반짝임(Shiny) 효과 커스텀
+            let bgColor = '#f59e0b'; // 일반 전설: 주황색
+            let shinyClass = '';
+            let rankText = `${data.region} ${data.rank}`;
+
+            // 🎉 100등 이내의 초고수면 오픈소스의 '이론치(Theory)'처럼 빛나는 애니메이션!
+            if (data.rank <= 100) {
+                bgColor = '#ef4444'; // 탑 100 전설: 빨간색
+                shinyClass = 'shiny';
+            }
+
+            // 채팅 HTML 조립 (오픈소스와 동일한 구조)
+            row.innerHTML = `
+                <span class="badge ${shinyClass} inline-block px-1.5 py-0.5 font-bold text-black text-[13px] align-middle mr-1" style="background-color: ${bgColor};">
+                    ${rankText}
+                </span>
+                <span class="font-bold text-gray-200 mr-1 align-middle">${data.nickname}</span>
+                <span class="align-middle">${data.msg}</span>
+            `;
+
+            chatContainer.appendChild(row);
+
+            // 오픈소스의 자동 스크롤 로직 이식
+            row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+
+            // 지정된 시간(15초)이 지나면 서서히 사라지는(Fadeout) 로직 이식
+            setTimeout(() => {
+                row.classList.add('fading');
+                setTimeout(() => row.remove(), 500); // 투명해진 후 DOM에서 완전히 삭제
+            }, FADEOUT_SEC * 1000);
+        }
+
+        // 웹소켓 연결 시작
+        connect();
+    </script>
+</body>
+</html>
