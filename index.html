@@ -33,18 +33,14 @@
     <script>
         const REDIRECT_URI = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
         
-        // 치지직 로그인
         document.getElementById('chzzkLoginBtn').addEventListener('click', function() {
             const chzzkClientId = '37cbbed2-f852-4d79-978f-03234545ee2a'; 
             const stateString = Math.random().toString(36).substring(2, 15);
             localStorage.setItem('login_provider', 'chzzk');
-            
-            // [수정 완료] 치지직 Open API 전용 인가(Authorization) 주소 및 파라미터 적용
             const chzzkAuthUrl = `https://chzzk.naver.com/account-interlock?response_type=code&clientId=${chzzkClientId}&redirectUri=${REDIRECT_URI}&state=${stateString}`;
             window.location.href = chzzkAuthUrl;
         });
 
-        // 배틀넷 로그인
         document.getElementById('bnetLoginBtn').addEventListener('click', function() {
             const bnetClientId = '4a49c5289b9a42aba85056bb55c1154c'; 
             const stateString = Math.random().toString(36).substring(2, 15);
@@ -89,7 +85,9 @@
                 
                 if (provider === 'bnet') {
                     document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
-                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/bnet?code=${code}&state=${state}`)
+                    // 💡 [수정 완료] 저장해 두었던 치지직 고유 식별자(chzzk_id)를 주소 뒤에 덧붙여 전송합니다.
+                    const chzzkId = localStorage.getItem('chzzk_id') || '';
+                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/bnet?code=${code}&state=${state}&chzzkId=${chzzkId}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === "success") {
