@@ -93,7 +93,7 @@
                         });
                 } else if (provider === 'naver') {
                     document.getElementById('naverLoginBtn').innerText = "네이버 연동 중...";
-                    fetch(`http://131.186.2.217:8000/api/naver?code=${code}&state=${state}`)
+                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/naver?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === "success") {
