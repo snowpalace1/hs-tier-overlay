@@ -9,18 +9,21 @@
 <body class="bg-gray-900 text-white flex items-center justify-center h-screen">
     <div class="bg-gray-800 p-8 rounded-lg shadow-lg text-center max-w-md w-full">
         <h1 class="text-3xl font-bold mb-4 text-blue-400">하스스톤 티어 인증</h1>
-        <p class="text-gray-400 mb-8">치지직 방송 오버레이 연동을 위해<br>두 계정을 모두 로그인해 주세요.</p>
+        <p class="text-gray-400 mb-8">치지직 방송 오버레이 연동을 위해<br>두 계정을 순서대로 로그인해 주세요.</p>
         
         <button id="naverLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded mb-4 transition duration-300">
-            1. 치지직(네이버) 로그인
+            1. 치지직(네이버) 연동하기
         </button>
         
-        <button id="bnetLoginBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
-            2. 배틀넷 로그인
+        <div id="resultArea" class="mt-4 mb-4 hidden bg-gray-700 p-4 rounded-lg">
+            <p id="naverResult" class="text-lg text-green-400 font-bold hidden">✅ 치지직: <span id="naverDisplay" class="text-white"></span></p>
+        </div>
+
+        <button id="bnetLoginBtn" style="display: none;" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
+            2. 배틀넷 연동하기
         </button>
 
-        <div id="resultArea" class="mt-6 hidden bg-gray-700 p-4 rounded-lg">
-            <p id="naverResult" class="text-lg text-green-400 font-bold mb-2 hidden">✅ 치지직: <span id="naverDisplay" class="text-white"></span></p>
+        <div id="bnetResultArea" class="mt-4 hidden bg-gray-700 p-4 rounded-lg">
             <p id="bnetResult" class="text-lg text-blue-400 font-bold hidden">✅ 배틀넷: <span id="battletagDisplay" class="text-white"></span></p>
         </div>
         
@@ -52,24 +55,30 @@
             const state = urlParams.get('state');
             const provider = localStorage.getItem('login_provider');
             
-            // 🔥 [가장 핵심] 코드를 읽자마자 브라우저 주소창에서 흔적을 지워버립니다!
+            // 주소창 코드 흔적 지우기
             if (code) {
-                window.history.replaceState({}, document.title, window.location.pathname);
+                window.history.replaceState(null, '', window.location.pathname);
             }
             
             const savedNaver = localStorage.getItem('naver_name');
             const savedBnet = localStorage.getItem('bnet_name');
             
-            if (savedNaver || savedBnet) {
-                document.getElementById('resultArea').classList.remove('hidden');
-            }
+            // UI 순차 표시 로직
             if (savedNaver) {
                 document.getElementById('naverLoginBtn').style.display = 'none';
+                document.getElementById('resultArea').classList.remove('hidden');
                 document.getElementById('naverResult').classList.remove('hidden');
                 document.getElementById('naverDisplay').innerText = savedNaver;
+                
+                // 네이버가 로그인 되어있고, 배틀넷은 안 되어있을 때만 배틀넷 버튼 표시
+                if (!savedBnet) {
+                    document.getElementById('bnetLoginBtn').style.display = 'block';
+                }
             }
+            
             if (savedBnet) {
                 document.getElementById('bnetLoginBtn').style.display = 'none';
+                document.getElementById('bnetResultArea').classList.remove('hidden');
                 document.getElementById('bnetResult').classList.remove('hidden');
                 document.getElementById('battletagDisplay').innerText = savedBnet;
             }
@@ -79,16 +88,15 @@
                 
                 if (provider === 'bnet') {
                     document.getElementById('bnetLoginBtn').innerText = "배틀넷 연동 중...";
-                    fetch(`https://hs-tier-overlay.vercel.app/api/index?code=${code}`)
+                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/bnet?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
-                            window.history.replaceState(null, '', window.location.pathname);
                             if (data.status === "success") {
                                 localStorage.setItem('bnet_name', data.battletag);
                                 window.location.reload(); 
                             } else {
-                                alert("배틀넷 인증 실패: " + data.error);
-                                document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 로그인";
+                                alert("배틀넷 인증 실패: " + data.message);
+                                document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 연동하기";
                             }
                         });
                 } else if (provider === 'naver') {
@@ -100,8 +108,8 @@
                                 localStorage.setItem('naver_name', data.nickname);
                                 window.location.reload();
                             } else {
-                                alert("네이버 인증 실패: " + data.error);
-                                document.getElementById('naverLoginBtn').innerText = "1. 치지직(네이버) 로그인";
+                                alert("네이버 인증 실패: " + data.message);
+                                document.getElementById('naverLoginBtn').innerText = "1. 치지직(네이버) 연동하기";
                             }
                         });
                 }
