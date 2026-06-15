@@ -11,12 +11,12 @@
         <h1 class="text-3xl font-bold mb-4 text-blue-400">하스스톤 티어 인증</h1>
         <p class="text-gray-400 mb-8">치지직 방송 오버레이 연동을 위해<br>두 계정을 순서대로 로그인해 주세요.</p>
         
-        <button id="naverLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded mb-4 transition duration-300">
-            1. 치지직(네이버) 연동하기
+        <button id="chzzkLoginBtn" class="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-4 rounded mb-4 transition duration-300">
+            1. 치지직 연동하기
         </button>
         
         <div id="resultArea" class="mt-4 mb-4 hidden bg-gray-700 p-4 rounded-lg">
-            <p id="naverResult" class="text-lg text-green-400 font-bold hidden">✅ 치지직: <span id="naverDisplay" class="text-white"></span></p>
+            <p id="chzzkResult" class="text-lg text-green-400 font-bold hidden">✅ 치지직: <span id="chzzkDisplay" class="text-white"></span></p>
         </div>
 
         <button id="bnetLoginBtn" style="display: none;" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-4 rounded transition duration-300">
@@ -33,14 +33,17 @@
     <script>
         const REDIRECT_URI = encodeURIComponent('https://snowpalace1.github.io/hs-tier-overlay/');
         
-        document.getElementById('naverLoginBtn').addEventListener('click', function() {
-            const naverClientId = 'kLCeM46CJDEtQ3gqVGfV'; 
+        // 치지직 로그인
+        document.getElementById('chzzkLoginBtn').addEventListener('click', function() {
+            const chzzkClientId = '37cbbed2-f852-4d79-978f-03234545ee2a'; 
             const stateString = Math.random().toString(36).substring(2, 15);
-            localStorage.setItem('login_provider', 'naver');
-            const naverAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${naverClientId}&redirect_uri=${REDIRECT_URI}&state=${stateString}`;
-            window.location.href = naverAuthUrl;
+            localStorage.setItem('login_provider', 'chzzk');
+            // 치지직 Open API 권한 동의 주소 (표준 OAuth)
+            const chzzkAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${chzzkClientId}&redirect_uri=${REDIRECT_URI}&state=${stateString}`;
+            window.location.href = chzzkAuthUrl;
         });
 
+        // 배틀넷 로그인
         document.getElementById('bnetLoginBtn').addEventListener('click', function() {
             const bnetClientId = '4a49c5289b9a42aba85056bb55c1154c'; 
             const stateString = Math.random().toString(36).substring(2, 15);
@@ -55,22 +58,19 @@
             const state = urlParams.get('state');
             const provider = localStorage.getItem('login_provider');
             
-            // 주소창 코드 흔적 지우기
             if (code) {
                 window.history.replaceState(null, '', window.location.pathname);
             }
             
-            const savedNaver = localStorage.getItem('naver_name');
+            const savedChzzk = localStorage.getItem('chzzk_name');
             const savedBnet = localStorage.getItem('bnet_name');
             
-            // UI 순차 표시 로직
-            if (savedNaver) {
-                document.getElementById('naverLoginBtn').style.display = 'none';
+            if (savedChzzk) {
+                document.getElementById('chzzkLoginBtn').style.display = 'none';
                 document.getElementById('resultArea').classList.remove('hidden');
-                document.getElementById('naverResult').classList.remove('hidden');
-                document.getElementById('naverDisplay').innerText = savedNaver;
+                document.getElementById('chzzkResult').classList.remove('hidden');
+                document.getElementById('chzzkDisplay').innerText = savedChzzk;
                 
-                // 네이버가 로그인 되어있고, 배틀넷은 안 되어있을 때만 배틀넷 버튼 표시
                 if (!savedBnet) {
                     document.getElementById('bnetLoginBtn').style.display = 'block';
                 }
@@ -99,17 +99,19 @@
                                 document.getElementById('bnetLoginBtn').innerText = "2. 배틀넷 연동하기";
                             }
                         });
-                } else if (provider === 'naver') {
-                    document.getElementById('naverLoginBtn').innerText = "네이버 연동 중...";
-                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/naver?code=${code}&state=${state}`)
+                } else if (provider === 'chzzk') {
+                    document.getElementById('chzzkLoginBtn').innerText = "치지직 연동 중...";
+                    fetch(`https://hs-chzzk-tier-api.duckdns.org/api/chzzk?code=${code}&state=${state}`)
                         .then(res => res.json())
                         .then(data => {
                             if (data.status === "success") {
-                                localStorage.setItem('naver_name', data.nickname);
+                                localStorage.setItem('chzzk_name', data.nickname);
+                                // 나중을 위해 고유 ID(userIdHash)도 저장해둡니다.
+                                localStorage.setItem('chzzk_id', data.userIdHash); 
                                 window.location.reload();
                             } else {
-                                alert("네이버 인증 실패: " + data.message);
-                                document.getElementById('naverLoginBtn').innerText = "1. 치지직(네이버) 연동하기";
+                                alert("치지직 인증 실패: " + data.message);
+                                document.getElementById('chzzkLoginBtn').innerText = "1. 치지직 연동하기";
                             }
                         });
                 }
