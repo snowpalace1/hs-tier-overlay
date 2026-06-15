@@ -38,8 +38,9 @@
             const chzzkClientId = '37cbbed2-f852-4d79-978f-03234545ee2a'; 
             const stateString = Math.random().toString(36).substring(2, 15);
             localStorage.setItem('login_provider', 'chzzk');
-            // 치지직 Open API 권한 동의 주소 (표준 OAuth)
-            const chzzkAuthUrl = `https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=${chzzkClientId}&redirect_uri=${REDIRECT_URI}&state=${stateString}`;
+            
+            // [수정 완료] 치지직 Open API 전용 인가(Authorization) 주소 및 파라미터 적용
+            const chzzkAuthUrl = `https://chzzk.naver.com/account-interlock?response_type=code&clientId=${chzzkClientId}&redirectUri=${REDIRECT_URI}&state=${stateString}`;
             window.location.href = chzzkAuthUrl;
         });
 
@@ -106,7 +107,6 @@
                         .then(data => {
                             if (data.status === "success") {
                                 localStorage.setItem('chzzk_name', data.nickname);
-                                // 나중을 위해 고유 ID(userIdHash)도 저장해둡니다.
                                 localStorage.setItem('chzzk_id', data.userIdHash); 
                                 window.location.reload();
                             } else {
